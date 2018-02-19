@@ -1,0 +1,8 @@
+prefix=/home/yzy/No2_ws/devel
+
+Name: turtleGo
+Description: Description of turtleGo
+Version: 0.1.0
+Cflags: 
+Libs: -L/home/yzy/No2_ws/devel/lib 
+Requires: 

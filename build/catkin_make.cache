@@ -1,0 +1,2 @@
+ENPM809B:ariac_example
+-DCATKIN_DEVEL_PREFIX=/home/yzy/No2_ws/devel -DCMAKE_INSTALL_PREFIX=/home/yzy/No2_ws/install -G Unix Makefiles
