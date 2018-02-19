@@ -76,8 +76,6 @@ public:
   void order_callback(const osrf_gear::Order::ConstPtr & order_msg) {
     ROS_INFO_STREAM("Received order:\n" << *order_msg);
     received_orders_.push_back(*order_msg);
-    grasp_bin7();
-    place_kit_tray1();
   }
 
 
@@ -119,7 +117,8 @@ public:
     msg.points.resize(1);
     // Resize the vector to the same length as the joint names.
     // Values are initialized to 0.
-    msg.points[0].positions = {1.76, 0.48, -0.5, 3.23,3.58,-1.51,0.0};
+    //msg.points[0].positions = {1.76, 0.48, -0.47, 3.23,3.58,-1.51,0.0};
+    msg.points[0].positions = {1.51, 0.0, -1.13, 3.14,3.58,-1.51,0.0};
     // How long to take getting to the point (floating point seconds).
     msg.points[0].time_from_start = ros::Duration(0.3);
     msg.header.stamp = ros::Time::now() + ros::Duration();
@@ -174,22 +173,56 @@ public:
     traj.joint_names.push_back("wrist_1_joint");
     traj.joint_names.push_back("wrist_2_joint");
     traj.joint_names.push_back("wrist_3_joint");
-    if(size == 2 && order_0_ == false && gripper_state_attatch_ == true) {
-        traj.points.clear();
-        traj.points.resize(2);
-        traj.points[0].positions = {1.76, 0.48, -1.0, 2.0, 3.58,-1.51,0.0};
-        traj.points[0].time_from_start = ros::Duration(0.5);
-        traj.points[1].positions = {1.76, 2.06,-0.63, 1.5, 3.27, -1.51, 0.0};
-        traj.points[1].time_from_start = ros::Duration(1);
-        traj.header.stamp = ros::Time::now() + ros::Duration();
-        joint_trajectory_publisher_.publish(traj);
+     place_kit_tray1();
+     std::vector<double> goal = {1.76, 2.06,-0.63, 1.5, 3.27, -1.51, 0.0};
+    if(size == 2 && order_0_ == false){
+      grasp_bin7();
+      std::vector<double> middle_p = {1.76, 0.46, -1.0, 2.0, 3.58,-1.51,0.0};
+      if(gripper_state_attatch_ == false) {
+       std::vector<double> p1 = {1.76, 0.48, -0.47, 3.23,3.58,-1.51,0.0};
+        move_to(p1,traj);
+      }
+        else{
+        move_to(middle_p,goal,traj);
         order_0_ = true;
+      }
+    }
+    if(size == 3 && order_1_ == false) {
+      grasp_bin7();
+      std::vector<double> middle_p = {1.76, 0.46, -1.0, 2.0, 3.58,-1.51,0.0};
+      if(gripper_state_attatch_ == false) {
+        std::vector<double> p2 = {1.76, 0.46, -0.47, 3.23,3.58,-1.51,0.0};
+        move_to(middle_p,p2,traj);
+      }
+      else {
+        move_to(middle_p,goal,traj);
+        order_1_ = true;
+      }
     }
     }
   }
 
+// Let the arm move along a two points trjectory
+  void move_to(const std::vector<double> &v1,const std::vector<double> &v2, trajectory_msgs::JointTrajectory& traj) {
+    traj.points.clear();
+    traj.points.resize(2);
+    traj.points[0].positions = v1;
+    traj.points[0].time_from_start = ros::Duration(0.5);
+    traj.points[1].positions = v2;
+    traj.points[1].time_from_start = ros::Duration(1);
+    traj.header.stamp = ros::Time::now() + ros::Duration();
+    joint_trajectory_publisher_.publish(traj);
+  }
 
-
+// Let the arm move to one point
+  void move_to(const std::vector<double> &v1, trajectory_msgs::JointTrajectory& traj) {
+    traj.points.clear();
+    traj.points.resize(1);
+    traj.points[0].positions = v1;
+    traj.points[0].time_from_start = ros::Duration(0.5);
+    traj.header.stamp = ros::Time::now() + ros::Duration();
+    joint_trajectory_publisher_.publish(traj);
+  }
   /// Called when a new Proximity message is received.
   void break_beam_callback(const osrf_gear::Proximity::ConstPtr & msg) {
     if (msg->object_detected) {  // If there is an object in proximity.
@@ -416,7 +449,7 @@ int main(int argc, char ** argv) {
   MyCompetitionClass comp_class(node);
 
   ros::Rate rate(10.0);
- while(ros::ok()) {
+ //while(ros::ok()) {
 
   // Subscribe to the '/ariac/current_score' topic.
   ros::Subscriber current_score_subscriber = node.subscribe(
@@ -473,9 +506,10 @@ int main(int argc, char ** argv) {
   ROS_INFO("Setup complete.");
   start_competition(node);
   //ros::Duration(0.5).sleep(); // sleep for half a second
-  ros::spinOnce();  // This executes callbacks on new data until ctrl-c.
-  rate.sleep();
-}
+  ros::spin();
+  //ros::spinOnce();  // This executes callbacks on new data until ctrl-c.
+  //rate.sleep();
+//}
 
   return 0;
 }
