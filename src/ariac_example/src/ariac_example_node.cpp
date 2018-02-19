@@ -416,7 +416,7 @@ int main(int argc, char ** argv) {
   MyCompetitionClass comp_class(node);
 
   ros::Rate rate(10.0);
- if(ros::ok()) {
+ while(ros::ok()) {
 
   // Subscribe to the '/ariac/current_score' topic.
   ros::Subscriber current_score_subscriber = node.subscribe(
