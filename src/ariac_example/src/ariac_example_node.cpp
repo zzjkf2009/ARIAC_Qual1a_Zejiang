@@ -92,8 +92,50 @@ public:
       ROS_INFO("Sending arm to zero joint positions...");
       send_arm_to_zero_state();
     }
-   // else
-    //  move_to_bin7();
+    else {
+    // Create a message to send.
+    trajectory_msgs::JointTrajectory traj;
+    traj.joint_names.clear();
+    traj.joint_names.push_back("elbow_joint");
+    traj.joint_names.push_back("linear_arm_actuator_joint");
+    traj.joint_names.push_back("shoulder_lift_joint");
+    traj.joint_names.push_back("shoulder_pan_joint");
+    traj.joint_names.push_back("wrist_1_joint");
+    traj.joint_names.push_back("wrist_2_joint");
+    traj.joint_names.push_back("wrist_3_joint");
+     place_kit_tray1();
+     std::vector<double> goal = {1.76, 2.06,-0.63, 1.5, 3.27, -1.51, 0.0};
+    if(num_tools_in_tray_ == 0 && order_0_ == false){
+      grasp_bin7();
+      std::vector<double> middle_p = {1.76, 0.42, -1.0, 2.0, 3.58,-1.51,0.0};
+      if(gripper_state_attatch_ == false) {
+       std::vector<double> p1 = {1.76, 0.42, -0.47, 3.23,3.58,-1.51,0.0};
+        move_to(p1,traj);
+      }
+        else
+        move_to(middle_p,goal,traj,joint_state_msg,order_0_);
+    }
+    if(num_tools_in_tray_ == 1 && order_1_ == false) {
+      grasp_bin7();
+      std::vector<double> middle_p = {1.76, 0.5, -1.0, 2.0, 3.58,-1.51,0.0};
+      if(gripper_state_attatch_ == false) {
+        std::vector<double> p2 = {2.0, 0.44, -0.48, 3.27,3.58,-1.51,0.0};
+        move_to(middle_p,p2,traj,joint_state_msg);
+      }
+      else
+        move_to(middle_p,goal,traj,joint_state_msg,order_1_);
+    } /**
+    if(num_tools_in_tray_ = 2 && order_2_ == false){
+      grasp_bin6();
+      std::vector<double> middle_p = {1.76, -0.46, -1.0, 2.0, 3.58,-1.51,0.0};
+      if(gripper_state_attatch_ == false) {
+        std::vector<double> p2 = {2.0, -0.37, -0.50, 3.27,3.52,-1.51,0.0};
+        move_to(middle_p,p2,traj,joint_state_msg);
+      }
+      else
+        move_to(middle_p,goal,traj,joint_state_msg,order_2_);
+    }**/
+    }
   }
 
 
@@ -126,30 +168,6 @@ public:
     joint_trajectory_publisher_.publish(msg);
   }
 
-  void move_to_bin7(){
-    // Create a message to send.
-    trajectory_msgs::JointTrajectory msg;
-
-    // Fill the names of the joints to be controlled.
-    // Note that the vacuum_gripper_joint is not controllable.
-    msg.joint_names.clear();
-    msg.joint_names.push_back("elbow_joint");
-    msg.joint_names.push_back("linear_arm_actuator_joint");
-    msg.joint_names.push_back("shoulder_lift_joint");
-    msg.joint_names.push_back("shoulder_pan_joint");
-    msg.joint_names.push_back("wrist_1_joint");
-    msg.joint_names.push_back("wrist_2_joint");
-    msg.joint_names.push_back("wrist_3_joint");
-    // Create one point in the trajectory.
-    msg.points.resize(1);
-    // Resize the vector to the same length as the joint names.
-    // Values are initialized to 0.
-    msg.points[0].positions= {1.76, 0.48,-1.25, 1.6, 3.27, -1.51, 0.0};
-    // How long to take getting to the point (floating point seconds).
-    msg.points[0].time_from_start = ros::Duration(1);
-    ROS_INFO_STREAM("Sending command:\n" << msg);
-    joint_trajectory_publisher_.publish(msg);
-  }
 
   /// Called when a new LogicalCameraImage message is received.
   void logical_camera_callback(
@@ -161,68 +179,72 @@ public:
   /// Called when a new
   void tray_logical_camera_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg) {
     ROS_INFO_STREAM("Logical camera_2: '" << image_msg->models.size() << "' objects.");
-    int size = image_msg->models.size();
-    if(has_been_zeroed_) {
-    // Create a message to send.
-    trajectory_msgs::JointTrajectory traj;
-    traj.joint_names.clear();
-    traj.joint_names.push_back("elbow_joint");
-    traj.joint_names.push_back("linear_arm_actuator_joint");
-    traj.joint_names.push_back("shoulder_lift_joint");
-    traj.joint_names.push_back("shoulder_pan_joint");
-    traj.joint_names.push_back("wrist_1_joint");
-    traj.joint_names.push_back("wrist_2_joint");
-    traj.joint_names.push_back("wrist_3_joint");
-     place_kit_tray1();
-     std::vector<double> goal = {1.76, 2.06,-0.63, 1.5, 3.27, -1.51, 0.0};
-    if(size == 2 && order_0_ == false){
-      grasp_bin7();
-      std::vector<double> middle_p = {1.76, 0.46, -1.0, 2.0, 3.58,-1.51,0.0};
-      if(gripper_state_attatch_ == false) {
-       std::vector<double> p1 = {1.76, 0.48, -0.47, 3.23,3.58,-1.51,0.0};
-        move_to(p1,traj);
-      }
-        else{
-        move_to(middle_p,goal,traj);
-        order_0_ = true;
-      }
-    }
-    if(size == 3 && order_1_ == false) {
-      grasp_bin7();
-      std::vector<double> middle_p = {1.76, 0.46, -1.0, 2.0, 3.58,-1.51,0.0};
-      if(gripper_state_attatch_ == false) {
-        std::vector<double> p2 = {1.76, 0.46, -0.47, 3.23,3.58,-1.51,0.0};
-        move_to(middle_p,p2,traj);
-      }
-      else {
-        move_to(middle_p,goal,traj);
-        order_1_ = true;
-      }
-    }
-    }
+     num_tools_in_tray_ = image_msg->models.size() -2 ;
   }
 
-// Let the arm move along a two points trjectory
-  void move_to(const std::vector<double> &v1,const std::vector<double> &v2, trajectory_msgs::JointTrajectory& traj) {
+// Let the arm move along a two points trjectory with setting the order
+  void move_to(const std::vector<double> &v1,const std::vector<double> &v2, trajectory_msgs::JointTrajectory& traj,
+               const sensor_msgs::JointState::ConstPtr& joint_state_msg,bool &order) {
     traj.points.clear();
-    traj.points.resize(2);
+    traj.points.resize(1);
+    if(!isclose(v1,joint_state_msg->position)) {
+      ROS_INFO("Move to middle point");
     traj.points[0].positions = v1;
-    traj.points[0].time_from_start = ros::Duration(0.5);
-    traj.points[1].positions = v2;
-    traj.points[1].time_from_start = ros::Duration(1);
-    traj.header.stamp = ros::Time::now() + ros::Duration();
+    traj.points[0].time_from_start = ros::Duration(0.3);
     joint_trajectory_publisher_.publish(traj);
+   } else {
+      ROS_INFO("Move to goal point");
+    traj.points[0].positions = v2;
+    traj.points[0].time_from_start = ros::Duration(0.5);
+    joint_trajectory_publisher_.publish(traj);
+    order = true;
+    }
+    //traj.header.stamp = ros::Time::now() + ros::Duration();
   }
+
+  // Let the arm move along a two points trjectory without setting the order
+    void move_to(const std::vector<double> &v1,const std::vector<double> &v2, trajectory_msgs::JointTrajectory& traj,
+                 const sensor_msgs::JointState::ConstPtr& joint_state_msg) {
+      traj.points.clear();
+      traj.points.resize(1);
+      if(!isclose(v1,joint_state_msg->position)) {
+        ROS_INFO("Move to middle point");
+      traj.points[0].positions = v1;
+      traj.points[0].time_from_start = ros::Duration(0.3);
+      joint_trajectory_publisher_.publish(traj);
+     } else {
+        ROS_INFO("Move to goal point");
+      traj.points[0].positions = v2;
+      traj.points[0].time_from_start = ros::Duration(0.5);
+      joint_trajectory_publisher_.publish(traj);
+      }
+      //traj.header.stamp = ros::Time::now() + ros::Duration();
+    }
+
 
 // Let the arm move to one point
   void move_to(const std::vector<double> &v1, trajectory_msgs::JointTrajectory& traj) {
     traj.points.clear();
     traj.points.resize(1);
     traj.points[0].positions = v1;
-    traj.points[0].time_from_start = ros::Duration(0.5);
-    traj.header.stamp = ros::Time::now() + ros::Duration();
+    traj.points[0].time_from_start = ros::Duration(0.3);
+    //traj.header.stamp = ros::Time::now() + ros::Duration();
     joint_trajectory_publisher_.publish(traj);
   }
+
+  bool isclose(const std::vector<double> &v1,const std::vector<double> &v2) {
+    for(int i = 0;i< v1.size();i++) {
+      if(abs(v1[i] - v2[i]) < 0.1)
+        continue;
+      else
+        return false;
+    }
+    return true;
+  }
+
+
+
+
   /// Called when a new Proximity message is received.
   void break_beam_callback(const osrf_gear::Proximity::ConstPtr & msg) {
     if (msg->object_detected) {  // If there is an object in proximity.
@@ -302,9 +324,9 @@ public:
         relative_pose_bin6.y = transform_bin6.getOrigin().y();
         relative_pose_bin6.z = transform_bin6.getOrigin().z();
 
-        ROS_INFO_STREAM("relative pose to bin6: x = " << relative_pose_bin6.x);
-        ROS_INFO_STREAM("relative pose to bin6: y = " << relative_pose_bin6.y);
-        ROS_INFO_STREAM("relative pose to bin6: z = " << relative_pose_bin6.z);
+        //ROS_INFO_STREAM("relative pose to bin6: x = " << relative_pose_bin6.x);
+       // ROS_INFO_STREAM("relative pose to bin6: y = " << relative_pose_bin6.y);
+        //ROS_INFO_STREAM("relative pose to bin6: z = " << relative_pose_bin6.z);
 
         // set up tolerance
         geometry_msgs::Point tolerance;
@@ -332,9 +354,9 @@ public:
           relative_pose_bin7.y = transform_bin7.getOrigin().y();
           relative_pose_bin7.z = transform_bin7.getOrigin().z();
 
-          ROS_INFO_STREAM("relative pose to bin7: x = " << relative_pose_bin7.x);
-          ROS_INFO_STREAM("relative pose to bin7: y = " << relative_pose_bin7.y);
-          ROS_INFO_STREAM("relative pose to bin7: z = " << relative_pose_bin7.z);
+        //  ROS_INFO_STREAM("relative pose to bin7: x = " << relative_pose_bin7.x);
+         // ROS_INFO_STREAM("relative pose to bin7: y = " << relative_pose_bin7.y);
+         // ROS_INFO_STREAM("relative pose to bin7: z = " << relative_pose_bin7.z);
 
           // set up tolerance
           geometry_msgs::Point tolerance;
@@ -361,9 +383,9 @@ public:
                 relative_pose_tray1.y = transform_tray1.getOrigin().y();
                 relative_pose_tray1.z = transform_tray1.getOrigin().z();
 
-                ROS_INFO_STREAM("relative pose to tray1: x = " << relative_pose_tray1.x);
-                ROS_INFO_STREAM("relative pose to tray1: y = " << relative_pose_tray1.y);
-                ROS_INFO_STREAM("relative pose to tray1: z = " << relative_pose_tray1.z);
+               // ROS_INFO_STREAM("relative pose to tray1: x = " << relative_pose_tray1.x);
+               // ROS_INFO_STREAM("relative pose to tray1: y = " << relative_pose_tray1.y);
+               // ROS_INFO_STREAM("relative pose to tray1: z = " << relative_pose_tray1.z);
 
 
                 // set up tolerance
@@ -393,9 +415,9 @@ public:
                 relative_pose_tray2.y = transform_tray2.getOrigin().y();
                 relative_pose_tray2.z = transform_tray2.getOrigin().z();
 
-                ROS_INFO_STREAM("relative pose to tray2: x = " << relative_pose_tray2.x);
-                ROS_INFO_STREAM("relative pose to tray2: y = " << relative_pose_tray2.y);
-                ROS_INFO_STREAM("relative pose to tray2: z = " << relative_pose_tray2.z);
+               // ROS_INFO_STREAM("relative pose to tray2: x = " << relative_pose_tray2.x);
+               // ROS_INFO_STREAM("relative pose to tray2: y = " << relative_pose_tray2.y);
+               // ROS_INFO_STREAM("relative pose to tray2: z = " << relative_pose_tray2.z);
 
 
                 // set up tolerance
@@ -422,6 +444,7 @@ private:
   bool order_0_= false; bool order_1_ = false; bool order_2_ = false;
   bool order_3_ = false; bool order_4_ = false;
   ros::ServiceClient gripper_service;
+  int num_tools_in_tray_;
 };
 
 void proximity_sensor_callback(const sensor_msgs::Range::ConstPtr & msg) {
@@ -505,7 +528,7 @@ int main(int argc, char ** argv) {
 
   ROS_INFO("Setup complete.");
   start_competition(node);
-  //ros::Duration(0.5).sleep(); // sleep for half a second
+ // ros::Duration(0.5).sleep(); // sleep for half a second
   ros::spin();
   //ros::spinOnce();  // This executes callbacks on new data until ctrl-c.
   //rate.sleep();
