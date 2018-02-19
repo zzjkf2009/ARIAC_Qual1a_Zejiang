@@ -108,8 +108,8 @@ public:
     if(num_tools_in_tray_ == 0 && order_0_ == false){
       grasp_bin7();
       std::vector<double> middle_p = {1.76, 0.42, -1.0, 2.0, 3.58,-1.51,0.0};
+      std::vector<double> p1 = {1.76, 0.42, -0.47, 3.23,3.58,-1.51,0.0};
       if(gripper_state_attatch_ == false) {
-       std::vector<double> p1 = {1.76, 0.42, -0.47, 3.23,3.58,-1.51,0.0};
         move_to(p1,traj);
       }
         else
@@ -118,23 +118,24 @@ public:
     if(num_tools_in_tray_ == 1 && order_1_ == false) {
       grasp_bin7();
       std::vector<double> middle_p = {1.76, 0.5, -1.0, 2.0, 3.58,-1.51,0.0};
+      std::vector<double> p2 = {2.0, 0.44, -0.48, 3.50,3.58,-1.51,0.0};
       if(gripper_state_attatch_ == false) {
-        std::vector<double> p2 = {2.0, 0.44, -0.48, 3.27,3.58,-1.51,0.0};
+
         move_to(middle_p,p2,traj,joint_state_msg);
       }
       else
         move_to(middle_p,goal,traj,joint_state_msg,order_1_);
-    } /**
-    if(num_tools_in_tray_ = 2 && order_2_ == false){
+    }
+    if(num_tools_in_tray_ == 2 && order_2_ == false){
       grasp_bin6();
       std::vector<double> middle_p = {1.76, -0.46, -1.0, 2.0, 3.58,-1.51,0.0};
+      std::vector<double> p2 = {2.0, -0.37, -0.50, 3.50,3.52,-1.51,0.0};
       if(gripper_state_attatch_ == false) {
-        std::vector<double> p2 = {2.0, -0.37, -0.50, 3.27,3.52,-1.51,0.0};
         move_to(middle_p,p2,traj,joint_state_msg);
       }
       else
         move_to(middle_p,goal,traj,joint_state_msg,order_2_);
-    }**/
+    }
     }
   }
 
@@ -195,7 +196,7 @@ public:
    } else {
       ROS_INFO("Move to goal point");
     traj.points[0].positions = v2;
-    traj.points[0].time_from_start = ros::Duration(0.5);
+    traj.points[0].time_from_start = ros::Duration(0.4);
     joint_trajectory_publisher_.publish(traj);
     order = true;
     }
