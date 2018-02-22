@@ -113,7 +113,7 @@ public:
         move_to(p1,traj);
       }
         else
-        move_to(middle_p,goal,traj,joint_state_msg,order_0_);
+        move_to(middle_p,goal,traj,joint_state_msg,order_0_,pass_order0[1]);
     }
     if(num_tools_in_tray_ == 1 && order_1_ == false) {
       grasp_bin7();
@@ -121,20 +121,20 @@ public:
       std::vector<double> p2 = {2.0, 0.44, -0.48, 3.50,3.58,-1.51,0.0};
       if(gripper_state_attatch_ == false) {
 
-        move_to(middle_p,p2,traj,joint_state_msg);
+        move_to(middle_p,p2,traj,joint_state_msg,pass_order1[0]);
       }
       else
-        move_to(middle_p,goal,traj,joint_state_msg,order_1_);
+        move_to(middle_p,goal,traj,joint_state_msg,order_1_,pass_order1[1]);
     }
     if(num_tools_in_tray_ == 2 && order_2_ == false){
       grasp_bin6();
       std::vector<double> middle_p = {1.76, -0.46, -1.0, 2.0, 3.58,-1.51,0.0};
       std::vector<double> p2 = {2.0, -0.37, -0.50, 3.50,3.52,-1.51,0.0};
       if(gripper_state_attatch_ == false) {
-        move_to(middle_p,p2,traj,joint_state_msg);
+        move_to(middle_p,p2,traj,joint_state_msg,pass_order2[0]);
       }
       else
-        move_to(middle_p,goal,traj,joint_state_msg,order_2_);
+        move_to(middle_p,goal,traj,joint_state_msg,order_2_,pass_order2[1]);
     }
     }
   }
@@ -163,7 +163,7 @@ public:
     //msg.points[0].positions = {1.76, 0.48, -0.47, 3.23,3.58,-1.51,0.0};
     msg.points[0].positions = {1.51, 0.0, -1.13, 3.14,3.58,-1.51,0.0};
     // How long to take getting to the point (floating point seconds).
-    msg.points[0].time_from_start = ros::Duration(0.3);
+    msg.points[0].time_from_start = ros::Duration(duration_time_);
     msg.header.stamp = ros::Time::now() + ros::Duration();
     ROS_INFO_STREAM("Sending command:\n" << msg);
     joint_trajectory_publisher_.publish(msg);
@@ -185,18 +185,19 @@ public:
 
 // Let the arm move along a two points trjectory with setting the order
   void move_to(const std::vector<double> &v1,const std::vector<double> &v2, trajectory_msgs::JointTrajectory& traj,
-               const sensor_msgs::JointState::ConstPtr& joint_state_msg,bool &order) {
+               const sensor_msgs::JointState::ConstPtr& joint_state_msg,bool &order,int &pass) {
     traj.points.clear();
     traj.points.resize(1);
-    if(!isclose(v1,joint_state_msg->position)) {
+    if(pass == 0) {
       ROS_INFO("Move to middle point");
+      pass = isclose(v1,joint_state_msg->position);
     traj.points[0].positions = v1;
-    traj.points[0].time_from_start = ros::Duration(0.3);
+    traj.points[0].time_from_start = ros::Duration(duration_time_/2);
     joint_trajectory_publisher_.publish(traj);
    } else {
       ROS_INFO("Move to goal point");
     traj.points[0].positions = v2;
-    traj.points[0].time_from_start = ros::Duration(0.4);
+    traj.points[0].time_from_start = ros::Duration(duration_time_/2);
     joint_trajectory_publisher_.publish(traj);
     order = true;
     }
@@ -205,18 +206,19 @@ public:
 
   // Let the arm move along a two points trjectory without setting the order
     void move_to(const std::vector<double> &v1,const std::vector<double> &v2, trajectory_msgs::JointTrajectory& traj,
-                 const sensor_msgs::JointState::ConstPtr& joint_state_msg) {
+                 const sensor_msgs::JointState::ConstPtr& joint_state_msg,int &pass) {
       traj.points.clear();
       traj.points.resize(1);
-      if(!isclose(v1,joint_state_msg->position)) {
+      if(pass == 0) {
         ROS_INFO("Move to middle point");
+        pass = isclose(v1,joint_state_msg->position);
       traj.points[0].positions = v1;
-      traj.points[0].time_from_start = ros::Duration(0.3);
+      traj.points[0].time_from_start = ros::Duration(duration_time_/2);
       joint_trajectory_publisher_.publish(traj);
      } else {
         ROS_INFO("Move to goal point");
       traj.points[0].positions = v2;
-      traj.points[0].time_from_start = ros::Duration(0.5);
+      traj.points[0].time_from_start = ros::Duration(duration_time_);
       joint_trajectory_publisher_.publish(traj);
       }
       //traj.header.stamp = ros::Time::now() + ros::Duration();
@@ -228,19 +230,19 @@ public:
     traj.points.clear();
     traj.points.resize(1);
     traj.points[0].positions = v1;
-    traj.points[0].time_from_start = ros::Duration(0.3);
+    traj.points[0].time_from_start = ros::Duration(duration_time_/2);
     //traj.header.stamp = ros::Time::now() + ros::Duration();
     joint_trajectory_publisher_.publish(traj);
   }
 
-  bool isclose(const std::vector<double> &v1,const std::vector<double> &v2) {
+  int isclose(const std::vector<double> &v1,const std::vector<double> &v2) {
     for(int i = 0;i< v1.size();i++) {
-      if(abs(v1[i] - v2[i]) < 0.1)
+      if(abs(v1[i] - v2[i]) < 0.05)
         continue;
       else
-        return false;
+        return 0;
     }
-    return true;
+    return 1;
   }
 
 
@@ -446,6 +448,12 @@ private:
   bool order_3_ = false; bool order_4_ = false;
   ros::ServiceClient gripper_service;
   int num_tools_in_tray_;
+  float duration_time_ = 0.6;
+  std::vector<int> pass_order0 {0,0};
+  std::vector<int> pass_order1 {0,0};
+  std::vector<int> pass_order2 {0,0};
+  std::vector<int> pass_order3 {0,0};
+  std::vector<int> pass_order4 {0,0};
 };
 
 void proximity_sensor_callback(const sensor_msgs::Range::ConstPtr & msg) {
