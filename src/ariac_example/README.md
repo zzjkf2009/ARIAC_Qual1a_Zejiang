@@ -15,6 +15,7 @@ git clone https://github.com/zzjkf2009/ARIAC_Qual1a_Zejiang
 cd <path_to_this_workspace>
 catkin_make
 rosrun osrf_gear gear.py -f `catkin_find --share osrf_gear`/config/qual1a.yaml <path_to_your_config_file>.yaml
+source devel/setup.bash
 rosrun ariac_example ariac_example_node
 ```
 
